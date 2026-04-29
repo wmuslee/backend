@@ -14,15 +14,29 @@ connectDB();
 
 const app = express();
 
-// Максимально открытый CORS для Vercel
+// === ИСПРАВЛЕННЫЙ CORS (как у подруги, но под твой Vercel) ===
 app.use(cors({
-  origin: true,                    // разрешает ВСЕ источники (для продакшена)
+  origin: [
+    "https://pex-frontend-gold.vercel.app",   // твой фронтенд
+    "https://*.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000"
+  ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-app.use(express.json());   // ← это должно быть ДО роутов
+// Для preflight-запросов
+app.options("*", cors({
+  origin: [
+    "https://pex-frontend-gold.vercel.app",
+    "https://*.vercel.app"
+  ],
+  credentials: true
+}));
+
+app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -33,10 +47,14 @@ app.get('/', (req, res) => {
   res.json({ message: 'PEX Backend is live 🚀' });
 });
 
+// Создаём HTTP сервер
 const server = http.createServer(app);
+
+// Настраиваем WebSocket
 setupWebSocket(server);
 
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 WebSocket endpoint: ws://localhost:${PORT}/ws`);
 });
